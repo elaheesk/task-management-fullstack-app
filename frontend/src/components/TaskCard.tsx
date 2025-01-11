@@ -1,11 +1,6 @@
-import Card from '@mui/material/Card';
-import CardActions from '@mui/material/CardActions';
-import CardContent from '@mui/material/CardContent';
-import Button from '@mui/material/Button';
-import Typography from '@mui/material/Typography';
-import Grid from '@mui/material/Grid2';
-import React, { memo } from "react";
+import { Card, CardActions, CardContent, Button, Typography } from '@mui/material';
 import { useNavigate, NavigateFunction, useLocation } from 'react-router-dom';
+import React, { memo } from "react";
 import { TaskCardProps } from '../types';
 
 
@@ -18,8 +13,7 @@ const TaskCard = ({ task, getTaskToEdit, deleteTask }: TaskCardProps) => {
         navigate(`/tasks/${id}`);
     };
     return (
-        <Grid size={4} >
-            <Card sx={{ marginTop: "5px" }} >
+            <Card sx={{ marginTop: "15px" }} >
                 <CardContent>
                     <Typography gutterBottom variant="h5" component="div">
                         {task?.taskName}
@@ -42,10 +36,8 @@ const TaskCard = ({ task, getTaskToEdit, deleteTask }: TaskCardProps) => {
 
                     {deleteTask && (<Button onClick={() => deleteTask(task?.taskId)} size="small">Delete task</Button>)}
                     {!isOnDetailsPage && (<Button onClick={()=>handleNavigation(task?.taskId)} size="small">See details</Button>)}
-              
                 </CardActions>
             </Card>
-        </Grid>
     )
 }
 export default memo(TaskCard);

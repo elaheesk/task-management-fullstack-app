@@ -1,9 +1,7 @@
-import Radio from '@mui/material/Radio';
-import FormControlLabel from '@mui/material/FormControlLabel';
+import { Radio, FormControlLabel } from '@mui/material';
 
 
 const RadioButton = ({ radioName, radioValue, radioLabel, handleOnchangeRadio, checked }: any) => {
- 
     return (
         <FormControlLabel name={radioName} value={radioValue} control={<Radio size="small" sx={{
             '& .MuiSvgIcon-root': {

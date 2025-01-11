@@ -1,15 +1,13 @@
 import axios from "axios";
-import { useEffect, useState useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Form from "../components/Form";
 import Grid from '@mui/material/Grid2';
-import TextField from "@mui/material/TextField/TextField";
-import Checkbox from "@mui/material/Checkbox";
 import TaskCard from "../components/TaskCard";
 import RadioButton from "../components/RadioButton";
 import { getData, getTaskToDelete, getTask, postOrEditTasks } from "../dataFetchUtils";
 import { sortFunction } from "../utils";
 import { FileMetadata, ITasks } from "../types";
-import Typography from "@mui/material/Typography";
+import { Box, Paper, Typography, Checkbox, TextField, styled } from '@mui/material';
 
 
 const Tasks = () => {
@@ -44,9 +42,8 @@ const Tasks = () => {
         }
     };
 
-  
 
-    const handleOnChange = useCallback((e:any) => {
+    const handleOnChange = useCallback((e: any) => {
         const { value, name } = e.target;
         setInputVal({
             ...inputVal,
@@ -57,7 +54,6 @@ const Tasks = () => {
 
     const handleSubmit = async (e: any) => {
         e.preventDefault();
- 
         if (inputVal.name === "" || inputVal.date === "" || inputVal.tagId === "" || inputVal.ranktask === "") {
             setErrorMessages({
                 nameError: inputVal.name === "" ? "you have enter a task" : "",
@@ -73,7 +69,6 @@ const Tasks = () => {
             formData.append("ranktask", inputVal.ranktask);
             formData.append("tagId", inputVal.tagId);
             if (!inputVal.id) {
-
                 if (newFile) {
                     formData.append("file", newFile);
                 }
@@ -84,7 +79,6 @@ const Tasks = () => {
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
-
                     const data = await response.json();
                     setTasks(data);
                     setFetchedTasks(data);
@@ -96,10 +90,8 @@ const Tasks = () => {
             else if (inputVal.id) {
                 formData.append("taskId", inputVal.id);
                 if (existingFile === null && newFile === null) {
-                    // File removed and no new file uploaded
                     formData.append("removeFile", "true");
                 } else if (newFile) {
-                    // New file uploaded
                     formData.append("file", newFile);
                 }
                 const response = await postOrEditTasks(formData, "PUT");
@@ -115,7 +107,6 @@ const Tasks = () => {
 
 
     const deleteTask = useCallback(async (id: number) => {
-     
         try {
             const response = await getTaskToDelete(id);
             if (response.statusText === "OK") {
@@ -146,7 +137,6 @@ const Tasks = () => {
             work: tagCheckBoxes.workTagIdIsChecked ? "1" : "",
             personal: tagCheckBoxes.personalTagIdIsChecked ? "2" : ""
         })
-
     }, [tagCheckBoxes.workTagIdIsChecked, tagCheckBoxes.personalTagIdIsChecked]);
 
     useEffect(() => {
@@ -160,10 +150,8 @@ const Tasks = () => {
                 } else {
                     checkboxValue = 2;
                 }
-       
                 try {
                     const response = await axios.get(`http://localhost:5000/tasks/tags?tagId=${checkboxValue}`);
-                    console.log("response issssssssssssss", response);
                     setTasks(response.data);
                 } catch (error) {
                     if (error.response && error.response.status === 404) {
@@ -187,44 +175,75 @@ const Tasks = () => {
             setTasks(response);
         }
     }
+    const Item = styled(Paper)(({ theme }) => ({
+        backgroundColor: '#fff',
+        ...theme.typography.body2,
+        padding: theme.spacing(1),
+        textAlign: 'center',
+        color: theme.palette.text.secondary,
+        ...theme.applyStyles('dark', {
+            backgroundColor: '#1A2027',
+        }),
+    }));
 
 
     return (
-        <div>
-            <div style={{ width: "300px" }}>
-                <Typography variant="h3" fontSize="sm" color="gray">Create your Task list</Typography>
-                <Form handleOnChange={handleOnChange} newFile={newFile} inputVal={inputVal} handleSubmit={handleSubmit} setNewFile={setNewFile} existingFile={existingFile} setExistingFile={setExistingFile} errorMessages={errorMessages} />
-       </div>
-            <Grid container spacing={6}>
-                <Grid size={2}>
-                    <TextField
-                        id="standard-textarea"
-                        label="Search"
-                        placeholder="Search"
-                        multiline
-                        variant="standard"
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                </Grid>
-                <Grid size={6}>
-                    <label>Work tasks</label>
-                    <Checkbox value="1" onChange={() => setTagCheckBoxes({ ...tagCheckBoxes, workTagIdIsChecked: !tagCheckBoxes.workTagIdIsChecked })} />
-                    <label>Personal tasks</label>
-                    <Checkbox value="2" onChange={() => setTagCheckBoxes({ ...tagCheckBoxes, personalTagIdIsChecked: !tagCheckBoxes.personalTagIdIsChecked })} />
-                </Grid>
-                <Grid size={4}>
-                    <RadioButton radioName="sortTasks" radioValue="ascName" radioLabel="Name A-Z" handleOnchangeRadio={handleSortTasks} checked={selectedValue === "ascName"} />
-                    <RadioButton radioName="sortTasks" radioValue="descName" radioLabel="Name Z-A" handleOnchangeRadio={handleSortTasks} checked={selectedValue === "descName"} />
-                    <RadioButton radioName="sortTasks" radioValue="ascDate" radioLabel="Oldest" handleOnchangeRadio={handleSortTasks} checked={selectedValue === "ascDate"} />
-                    <RadioButton radioName="sortTasks" radioValue="descDate" radioLabel="Most recent" handleOnchangeRadio={handleSortTasks} checked={selectedValue === "descDate"} />
-                </Grid>
-            </Grid>
+        <Box sx={{ flexGrow: 1 }}>
             <Grid container spacing={2}>
-                {tasks.map((task: ITasks) => (
-                    <TaskCard key={task.taskId} task={task} getTaskToEdit={getTaskToEdit} deleteTask={deleteTask} />
-                ))}
+                <Grid size={{ xs: 12, md: 12 }}>
+                    <Item><Typography variant="h3" fontSize="sm" color="gray">Create your Task list</Typography></Item>
+                </Grid>
+                <Grid size={{ xs: 6, md: 3 }}>
+                    <Form handleOnChange={handleOnChange} newFile={newFile} inputVal={inputVal} handleSubmit={handleSubmit} setNewFile={setNewFile} existingFile={existingFile} setExistingFile={setExistingFile} errorMessages={errorMessages} />
+                </Grid>
+                <Grid size={{ xs: 6, md: 9 }}>
+                    <Grid container direction="row"
+                        sx={{
+                            justifyContent: "space-between",
+                            alignItems: "stretch",
+                        }}>
+                        <TextField
+                            id="standard-textarea"
+                            label="Search"
+                            placeholder="Search"
+                            multiline
+                            variant="standard"
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                        <Grid container
+                            direction="row"
+                            sx={{
+                                justifyContent: "flex-end",
+                                alignItems: "flex-end",
+                            }}>
+                            <RadioButton radioName="sortTasks" radioValue="ascName" radioLabel="Name A-Z" handleOnchangeRadio={handleSortTasks} checked={selectedValue === "ascName"} />
+                            <RadioButton radioName="sortTasks" radioValue="descName" radioLabel="Name Z-A" handleOnchangeRadio={handleSortTasks} checked={selectedValue === "descName"} />
+                            <RadioButton radioName="sortTasks" radioValue="ascDate" radioLabel="Oldest" handleOnchangeRadio={handleSortTasks} checked={selectedValue === "ascDate"} />
+                            <RadioButton radioName="sortTasks" radioValue="descDate" radioLabel="Most recent" handleOnchangeRadio={handleSortTasks} checked={selectedValue === "descDate"} />
+                        </Grid>
+                    </Grid>
+                    <Grid
+                        container
+                        direction="column"
+                        sx={{ alignItems: "flex-start" }}>
+                        <Grid>
+                          Work tasks
+                            <Checkbox size="small" value="1" onChange={() => setTagCheckBoxes({ ...tagCheckBoxes, workTagIdIsChecked: !tagCheckBoxes.workTagIdIsChecked })} />
+                        </Grid>
+                        <Grid>
+                           Personal tasks
+                            <Checkbox size="small" value="2" onChange={() => setTagCheckBoxes({ ...tagCheckBoxes, personalTagIdIsChecked: !tagCheckBoxes.personalTagIdIsChecked })} />
+                        </Grid>
+                    </Grid>
+                    <Grid container direction="row"
+                        sx={{ justifyContent: "space-between", alignItems: "stretch" }}>
+                        {tasks.map((task: ITasks) => (
+                            <TaskCard key={task.taskId} task={task} getTaskToEdit={getTaskToEdit} deleteTask={deleteTask} />
+                        ))}
+                    </Grid>
+                </Grid>
             </Grid>
-        </div>
+        </Box>
     );
 };
 
