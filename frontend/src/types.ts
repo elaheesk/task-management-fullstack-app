@@ -21,4 +21,23 @@ export interface TaskCardProps {
     task: ITasks;
     getTaskToEdit?: (id: number) => Promise<void>;
     deleteTask?: (id: number) => Promise<void>;
-} 
+}
+export interface IValidations {
+    name: (value: string) => {
+        isValid: boolean;
+        error: string;
+    };
+    date: (value: string) => {
+        isValid: boolean;
+        error: string;
+    };
+}
+interface InputField {
+    value: string;
+    hasError: boolean;
+    touched: boolean;
+};
+export interface IInputData {
+    [key: string]: InputField;
+};
+

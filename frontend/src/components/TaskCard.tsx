@@ -12,6 +12,7 @@ const TaskCard = ({ task, getTaskToEdit, deleteTask }: TaskCardProps) => {
     const handleNavigation = (id:number) => {
         navigate(`/tasks/${id}`);
     };
+
     return (
             <Card sx={{ marginTop: "15px" }} >
                 <CardContent>

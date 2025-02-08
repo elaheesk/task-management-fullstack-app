@@ -1,35 +1,44 @@
 import axios from "axios";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, ChangeEvent } from "react";
 import Form from "../components/Form";
 import Grid from '@mui/material/Grid2';
 import TaskCard from "../components/TaskCard";
 import RadioButton from "../components/RadioButton";
 import { getData, getTaskToDelete, getTask, postOrEditTasks } from "../dataFetchUtils";
 import { sortFunction } from "../utils";
-import { FileMetadata, ITasks } from "../types";
+import { FileMetadata, IInputData, ITasks, IValidations } from "../types";
 import { Box, Paper, Typography, Checkbox, TextField, styled } from '@mui/material';
 
 
 const Tasks = () => {
     const [fetchedTasks, setFetchedTasks] = useState<ITasks[]>([]);
     const [tasks, setTasks] = useState<ITasks[]>([]);
-    const [inputVal, setInputVal] = useState({ id: "", name: "", date: "", ranktask: "", tagId: "" });
+    const [status, setStatus] = useState("");
+    const [inputVal, setInputVal] = useState<IInputData>({
+        id: { value: "", hasError: false, touched: false },
+        name: { value: "", hasError: false, touched: false },
+        date: { value: "", hasError: false, touched: false },
+        ranktask: { value: "", hasError: false, touched: false },
+        tagId: { value: "", hasError: false, touched: false }
+    });
+
     const [searchTerm, setSearchTerm] = useState<string>("")
     const [tagCheckBoxes, setTagCheckBoxes] = useState({ workTagIdIsChecked: false, personalTagIdIsChecked: false });
     const [tags, setTags] = useState({ work: "", personal: "" });
     const [existingFile, setExistingFile] = useState<FileMetadata | null>(null);
     const [newFile, setNewFile] = useState<File | null>(null);
     const [selectedValue, setSelectedValue] = useState("");
-    const [errorMessages, setErrorMessages] = useState({
-        nameError: "",
-        dateError: "",
-        tagIdError: "",
-        ranktaskError: ""
-    })
+
 
     const getTaskToEdit = async (id: number) => {
         const response = await getTask(id);
-        setInputVal({ id: response.taskId, name: response.taskName, date: response.date.slice(0, 10), ranktask: response.ranktask, tagId: response.tagId.toString() });
+        setInputVal({
+            id: { value: response.taskId, hasError: false, touched: false },
+            name: { value: response.taskName, hasError: false, touched: false },
+            date: { value: response.date.slice(0, 10), hasError: false, touched: false },
+            ranktask: { value: response.ranktask, hasError: false, touched: false },
+            tagId: { value: response.tagId.toString(), hasError: false, touched: false }
+        });
         if (response.filename) {
             setExistingFile({
                 name: response.filename,
@@ -42,33 +51,73 @@ const Tasks = () => {
         }
     };
 
-
     const handleOnChange = useCallback((e: any) => {
-        const { value, name } = e.target;
-        setInputVal({
-            ...inputVal,
-            [name]: name === "date" ? value : value,
-        })
-    }, [inputVal])
+        const { name, value } = e.target;
+
+        setInputVal((prevForm) => ({
+            ...prevForm,
+            [name]: {
+                ...prevForm[name],
+                value: value,
+                touched: true,
+            },
+        }));
+    }, [inputVal]);
 
 
-    const handleSubmit = async (e: any) => {
-        e.preventDefault();
-        if (inputVal.name === "" || inputVal.date === "" || inputVal.tagId === "" || inputVal.ranktask === "") {
-            setErrorMessages({
-                nameError: inputVal.name === "" ? "you have enter a task" : "",
-                dateError: inputVal.date === "" ? "you have to enter a date" : "",
-                tagIdError: inputVal.tagId === "" ? "you have to choose type of task" : "",
-                ranktaskError: inputVal.ranktask === "" ? "you have to rank the task" : "",
-            })
-            return;
+    const blurHandler = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target; 
+
+        if (name === "tagId") {
+            setInputVal((prevForm) => ({
+                ...prevForm,
+                tagId: {
+                    hasError: false,
+                    value: value,
+                    touched: true,
+              
+                },
+            }));
+        } else if (name === "ranktask") {
+            setInputVal((prevForm) => ({
+                ...prevForm,
+                ranktask: {
+                    hasError: false,
+                    value: value,
+                    touched: true,
+                },
+            }));
         } else {
+            const { name, value } = e.target as { name: keyof IValidations; value: string };
+            const { isValid, error } = validations[name](value);
+            setInputVal((prevForm: IInputData) => ({
+                ...prevForm,
+                [name]: {
+                    ...prevForm[name],
+                    hasError: !isValid,
+                    errorMessage: isValid ? "" : error,
+                    touched: true,
+                },
+            }));
+        }
+    };
+
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+   
+        const isFormValid = Object.entries(inputVal)
+            .filter(([key]) => key !== "id") // Exclude the 'id' field
+            .every(([_, input]) => !input.hasError && input.touched);
+
+        if (isFormValid) {
             const formData = new FormData();
-            formData.append("taskName", inputVal.name);
-            formData.append("date", inputVal.date);
-            formData.append("ranktask", inputVal.ranktask);
-            formData.append("tagId", inputVal.tagId);
-            if (!inputVal.id) {
+            formData.append("taskName", inputVal.name.value);
+            formData.append("date", inputVal.date.value);
+            formData.append("ranktask", inputVal.ranktask.value);
+            formData.append("tagId", inputVal.tagId.value);
+     
+            if (!inputVal.id.value) {
                 if (newFile) {
                     formData.append("file", newFile);
                 }
@@ -87,8 +136,9 @@ const Tasks = () => {
                 }
             }
 
-            else if (inputVal.id) {
-                formData.append("taskId", inputVal.id);
+
+            else if (inputVal.id.value) {
+                formData.append("taskId", inputVal.id.value);
                 if (existingFile === null && newFile === null) {
                     formData.append("removeFile", "true");
                 } else if (newFile) {
@@ -99,10 +149,48 @@ const Tasks = () => {
                 setTasks(data);
                 setFetchedTasks(data);
             }
-            setInputVal({ id: "", name: "", date: "", ranktask: "", tagId: "" });
+
+            setInputVal({
+                id: { value: "", hasError: false, touched: false },
+                name: { value: "", hasError: false, touched: false },
+                date: { value: "", hasError: false, touched: false },
+                ranktask: { value: "", hasError: false, touched: false },
+                tagId: { value: "", hasError: false, touched: false }
+            })
             setNewFile(null);
             setExistingFile(null);
+            setStatus("");
+        } else {
+            setInputVal((prevForm) => ({
+                ...prevForm,
+                tagId: {
+                    hasError: !inputVal.tagId.value ? true : false, 
+                    value: inputVal.tagId.value,
+                    touched: !inputVal.tagId.value ? false : true,
+                    errorMessage: !inputVal.tagId.value ? "Please choose what kind of taskit is" : "",
+                },
+                ranktask: {
+                    hasError: !inputVal.ranktask.value ? true : false,
+                    value: inputVal.ranktask.value,
+                    touched: !inputVal.ranktask.value ? false : true,
+                    errorMessage: !inputVal.ranktask.value ? "Please choose a ranking" : "",
+                },
+                date: {
+                    hasError: !inputVal.date.value ? true : false,
+                    value: inputVal.date.value,
+                    touched: !inputVal.date.value ? false : true,
+                    errorMessage: !inputVal.date.value ? "Please enter a date" : "",
+                },
+                name: {
+                    hasError: !inputVal.name.value ? true : false,
+                    value: inputVal.name.value,
+                    touched: !inputVal.name.value ? false : true,
+                    errorMessage: !inputVal.name.value ? "Please choose a task" : "",
+                },
+            }));
+            setStatus("Please fill in all required fields correctly.");
         }
+
     }
 
 
@@ -167,7 +255,7 @@ const Tasks = () => {
     }, [tags.work, tags.personal]);
 
 
-    const handleSortTasks = (e: any) => {
+    const handleSortTasks = (e:ChangeEvent<HTMLInputElement>) => {
         const { value } = e.target;
         setSelectedValue(value)
         if (fetchedTasks.length > 0) {
@@ -186,6 +274,34 @@ const Tasks = () => {
         }),
     }));
 
+    function validateDate(input:string) {
+        const regex = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
+
+        if (!regex.test(input)) {
+            return false;
+        }
+
+        const [year, month, day] = input.split('-').map(Number);
+
+        const date = new Date(year, month - 1, day);
+        return (
+            date.getFullYear() === year &&
+            date.getMonth() === month - 1 &&
+            date.getDate() === day
+        );
+    }
+
+    const validations: IValidations = {
+        name: (value: string) => ({
+            isValid: /^[0-9A-Za-z\s]{3,25}$/.test(value),
+            error: "Enter enter a task",
+        }),
+        date: (value: string) => ({
+            isValid: validateDate(value),
+            error: "Enter a valid date",
+        })
+       
+    };
 
     return (
         <Box sx={{ flexGrow: 1 }}>
@@ -194,8 +310,9 @@ const Tasks = () => {
                     <Item><Typography variant="h3" fontSize="sm" color="gray">Create your Task list</Typography></Item>
                 </Grid>
                 <Grid size={{ xs: 6, md: 3 }}>
-                    <Form handleOnChange={handleOnChange} newFile={newFile} inputVal={inputVal} handleSubmit={handleSubmit} setNewFile={setNewFile} existingFile={existingFile} setExistingFile={setExistingFile} errorMessages={errorMessages} />
+                    <Form status={status} blurHandler={blurHandler} handleOnChange={handleOnChange} newFile={newFile} inputVal={inputVal} handleSubmit={handleSubmit} setNewFile={setNewFile} existingFile={existingFile} setExistingFile={setExistingFile} />
                 </Grid>
+              
                 <Grid size={{ xs: 6, md: 9 }}>
                     <Grid container direction="row"
                         sx={{
@@ -227,11 +344,11 @@ const Tasks = () => {
                         direction="column"
                         sx={{ alignItems: "flex-start" }}>
                         <Grid>
-                          Work tasks
+                            Work tasks
                             <Checkbox size="small" value="1" onChange={() => setTagCheckBoxes({ ...tagCheckBoxes, workTagIdIsChecked: !tagCheckBoxes.workTagIdIsChecked })} />
                         </Grid>
                         <Grid>
-                           Personal tasks
+                            Personal tasks
                             <Checkbox size="small" value="2" onChange={() => setTagCheckBoxes({ ...tagCheckBoxes, personalTagIdIsChecked: !tagCheckBoxes.personalTagIdIsChecked })} />
                         </Grid>
                     </Grid>
@@ -241,7 +358,7 @@ const Tasks = () => {
                             <TaskCard key={task.taskId} task={task} getTaskToEdit={getTaskToEdit} deleteTask={deleteTask} />
                         ))}
                     </Grid>
-                </Grid>
+                    button</Grid>
             </Grid>
         </Box>
     );
