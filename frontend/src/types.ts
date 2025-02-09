@@ -22,16 +22,7 @@ export interface TaskCardProps {
     getTaskToEdit?: (id: number) => Promise<void>;
     deleteTask?: (id: number) => Promise<void>;
 }
-export interface IValidations {
-    name: (value: string) => {
-        isValid: boolean;
-        error: string;
-    };
-    date: (value: string) => {
-        isValid: boolean;
-        error: string;
-    };
-}
+
 interface InputField {
     value: string;
     hasError: boolean;
@@ -41,3 +32,6 @@ export interface IInputData {
     [key: string]: InputField;
 };
 
+export interface IValidations {
+    [key: string]: (value: string) => { isValid: boolean; error: string };
+}

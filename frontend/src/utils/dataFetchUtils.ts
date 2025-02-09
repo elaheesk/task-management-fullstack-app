@@ -23,7 +23,7 @@ export const getTaskToDelete = async (id: number) => {
     return response;
 
 }
-export const postOrEditTasks = async (data:any,fetchMethod:string) => {
+export const postOrEditTasks = async (data:FormData,fetchMethod:string) => {
     const response = await fetch('http://localhost:5000/tasks', {
         method: fetchMethod,
         body: data
